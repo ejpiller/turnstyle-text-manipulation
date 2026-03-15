@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Text Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: 'Lora', Georgia, serif;
       background: #f5f5f5;
       color: #222;
       min-height: 100vh;
@@ -21,7 +23,7 @@
     h1 {
       font-size: 1.6rem;
       font-weight: 700;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.6rem;
       letter-spacing: -0.02em;
     }
 
@@ -83,14 +85,25 @@
       cursor: pointer;
     }
 
+    .options-header {
+      padding: 0.6rem 0 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .options-header > h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #555;
+      letter-spacing: 0;
+      text-transform: none;
+      margin-bottom: 0.3rem;
+    }
+
     .options-actions {
       display: flex;
-      justify-content: flex-end;
       align-items: center;
       gap: 0.35rem;
-      padding: 0.5rem 0 0;
-      border-bottom: 1px solid #f0f0f0;
-      margin-bottom: 0;
+      padding-bottom: 0.55rem;
     }
 
     .text-btn {
@@ -101,12 +114,12 @@
       font-family: inherit;
       font-weight: 500;
       cursor: pointer;
-      padding: 0 0 0.5rem;
+      padding: 0;
     }
 
     .text-btn:hover { text-decoration: underline; }
 
-    .sep { color: #ccc; font-size: 0.8rem; padding-bottom: 0.5rem; }
+    .sep { color: #ccc; font-size: 0.8rem; }
 
     .dash-row {
       display: flex;
@@ -174,9 +187,10 @@
     .info::after {
       content: attr(data-tip);
       position: absolute;
-      left: 50%;
+      right: 0;
+      left: auto;
       top: calc(100% + 6px);
-      transform: translateX(-50%);
+      transform: none;
       background: #333;
       color: #fff;
       font-size: 0.8rem;
@@ -280,10 +294,13 @@
     <h1>Text Tools</h1>
 
     <div class="options">
-      <div class="options-actions">
-        <button class="text-btn" id="selectAllBtn">Select all</button>
-        <span class="sep">&#183;</span>
-        <button class="text-btn" id="clearAllBtn">Clear all</button>
+      <div class="options-header">
+        <h2>Transformations</h2>
+        <div class="options-actions">
+          <button class="text-btn" id="selectAllBtn">Select all</button>
+          <span class="sep">&#183;</span>
+          <button class="text-btn" id="clearAllBtn">Clear all</button>
+        </div>
       </div>
       <div class="option-group">
         <h2>Whitespace</h2>
