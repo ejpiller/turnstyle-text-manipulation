@@ -83,6 +83,106 @@
       cursor: pointer;
     }
 
+    .options-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0 0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 0;
+    }
+
+    .text-btn {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-size: 0.8rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0 0 0.5rem;
+    }
+
+    .text-btn:hover { text-decoration: underline; }
+
+    .sep { color: #ccc; font-size: 0.8rem; padding-bottom: 0.5rem; }
+
+    .dash-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem 1rem;
+    }
+
+    .dash-row > label { flex-shrink: 0; }
+
+    .dash-choices {
+      display: flex;
+      gap: 0.9rem;
+      align-items: center;
+    }
+
+    .dash-choices label {
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0;
+    }
+
+    .dash-choices label input[type="radio"] { margin-top: 0; }
+
+    .dash-choices.muted {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95em;
+      height: 0.95em;
+      border-radius: 50%;
+      border: 1.5px solid #aaa;
+      color: #aaa;
+      font-size: 0.68rem;
+      font-style: normal;
+      font-weight: 600;
+      cursor: help;
+      position: relative;
+      vertical-align: middle;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-left: 0.2em;
+    }
+
+    .info::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 6px);
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 400;
+      padding: 0.45em 0.7em;
+      border-radius: 6px;
+      width: max-content;
+      max-width: 230px;
+      white-space: normal;
+      line-height: 1.45;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+      text-align: left;
+    }
+
+    .info:hover::after { opacity: 1; }
+
     .text-area-wrapper {
       position: relative;
     }
@@ -167,6 +267,11 @@
     <h1>Text Tools</h1>
 
     <div class="options">
+      <div class="options-actions">
+        <button class="text-btn" id="selectAllBtn">Select all</button>
+        <span class="sep">&#183;</span>
+        <button class="text-btn" id="clearAllBtn">Clear all</button>
+      </div>
       <div class="option-group">
         <h2>Whitespace</h2>
         <label>
@@ -175,19 +280,29 @@
         </label>
         <label>
           <input type="checkbox" id="chkWhitespace">
-          Collapse extra whitespace (tabs and multiple spaces to single space)
+          Collapse extra whitespace
+          <i class="info" data-tip="Converts tabs and other non-standard horizontal whitespace to spaces, then collapses multiple consecutive spaces into one.">i</i>
         </label>
       </div>
       <div class="option-group">
         <h2>Typography</h2>
-        <label>
-          <input type="radio" name="dashStyle" id="chkEmDash" value="em">
-          Em dashes (&#8220; - &#8221; &#8594; &#8220;&#8212;&#8221;)
-        </label>
-        <label>
-          <input type="radio" name="dashStyle" id="chkEnDash" value="en">
-          En dashes (&#8220; - &#8221; &#8594; nonbreaking space + en dash + space)
-        </label>
+        <div class="dash-row">
+          <label>
+            <input type="checkbox" id="chkDash">
+            Dashes
+          </label>
+          <span class="dash-choices muted" id="dashChoices">
+            <label>
+              <input type="radio" name="dashStyle" id="rdoEmDash" value="em" checked>
+              Em dash
+            </label>
+            <label>
+              <input type="radio" name="dashStyle" id="rdoEnDash" value="en">
+              En dash
+              <i class="info" data-tip="Inserts a nonbreaking space before the dash to prevent line breaks between the preceding word and the dash.">i</i>
+            </label>
+          </span>
+        </div>
         <label>
           <input type="checkbox" id="chkSmartQuotes">
           Smart quotes (straight quotes and apostrophes to curly)
@@ -302,11 +417,13 @@
 
     // --- UI wiring ---
 
-    const inputText = document.getElementById('inputText');
-    const applyBtn  = document.getElementById('applyBtn');
-    const resetBtn  = document.getElementById('resetBtn');
-    const copyBtn   = document.getElementById('copyBtn');
-    const clearBtn  = document.getElementById('clearBtn');
+    const inputText    = document.getElementById('inputText');
+    const applyBtn     = document.getElementById('applyBtn');
+    const resetBtn     = document.getElementById('resetBtn');
+    const copyBtn      = document.getElementById('copyBtn');
+    const clearBtn     = document.getElementById('clearBtn');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const clearAllBtn  = document.getElementById('clearAllBtn');
 
     let originalText = null;
 
@@ -314,8 +431,30 @@
     const chkTitleCase   = document.getElementById('chkTitleCase');
     const chkWhitespace  = document.getElementById('chkWhitespace');
     const chkLineBreaks  = document.getElementById('chkLineBreaks');
-    const chkEmDash      = document.getElementById('chkEmDash');
-    const chkEnDash      = document.getElementById('chkEnDash');
+    const chkDash        = document.getElementById('chkDash');
+    const rdoEmDash      = document.getElementById('rdoEmDash');
+    const rdoEnDash      = document.getElementById('rdoEnDash');
+    const dashChoices    = document.getElementById('dashChoices');
+
+    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkSmartQuotes, chkTitleCase];
+
+    function setDashChoicesEnabled(enabled) {
+      dashChoices.classList.toggle('muted', !enabled);
+      rdoEmDash.disabled = !enabled;
+      rdoEnDash.disabled = !enabled;
+    }
+
+    chkDash.addEventListener('change', () => setDashChoicesEnabled(chkDash.checked));
+
+    selectAllBtn.addEventListener('click', () => {
+      allCheckboxes.forEach(c => c.checked = true);
+      setDashChoicesEnabled(true);
+    });
+
+    clearAllBtn.addEventListener('click', () => {
+      allCheckboxes.forEach(c => c.checked = false);
+      setDashChoicesEnabled(false);
+    });
 
     applyBtn.addEventListener('click', () => {
       originalText = inputText.value;
@@ -324,12 +463,12 @@
       let text = originalText;
 
       // Order matters: whitespace cleanup first, then punctuation, then capitalization
-      if (chkLineBreaks.checked)  text = removeLineBreaks(text);
-      if (chkWhitespace.checked)  text = collapseWhitespace(text);
-      if (chkEmDash.checked)      text = replaceHyphenWithEmDash(text);
-      if (chkEnDash.checked)      text = replaceHyphenWithEnDash(text);
-      if (chkTitleCase.checked)   text = toTitleCase(text);
-      if (chkSmartQuotes.checked) text = smartQuotes(text);
+      if (chkLineBreaks.checked)               text = removeLineBreaks(text);
+      if (chkWhitespace.checked)               text = collapseWhitespace(text);
+      if (chkDash.checked && rdoEmDash.checked) text = replaceHyphenWithEmDash(text);
+      if (chkDash.checked && rdoEnDash.checked) text = replaceHyphenWithEnDash(text);
+      if (chkTitleCase.checked)                text = toTitleCase(text);
+      if (chkSmartQuotes.checked)              text = smartQuotes(text);
 
       inputText.value = text;
     });
