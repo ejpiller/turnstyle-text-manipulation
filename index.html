@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Tools</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .options {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .options h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+
+    label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    .text-area-wrapper {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      line-height: 1.6;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus { border-color: #2563eb; }
+
+    textarea::placeholder { color: #bbb; }
+
+    .actions {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    button {
+      padding: 0.55rem 1.25rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    #applyBtn {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    #applyBtn:hover { background: #1d4ed8; }
+
+    #copyBtn {
+      background: #e5e7eb;
+      color: #222;
+    }
+
+    #copyBtn:hover { background: #d1d5db; }
+
+    #clearBtn {
+      background: #e5e7eb;
+      color: #222;
+      margin-left: auto;
+    }
+
+    #clearBtn:hover { background: #d1d5db; }
+
+    #copyBtn.copied {
+      background: #d1fae5;
+      color: #065f46;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Text Tools</h1>
+
+    <div class="options">
+      <h2>Transformations</h2>
+      <label>
+        <input type="checkbox" id="chkSmartQuotes">
+        Convert straight quotes &amp; apostrophes to typographer&#8217;s (&#8220;smart&#8221;) quotes
+      </label>
+      <label>
+        <input type="checkbox" id="chkTitleCase">
+        Apply title capitalization
+      </label>
+      <label>
+        <input type="checkbox" id="chkWhitespace">
+        Remove double spaces, tabs, and nonstandard whitespace (collapse to single spaces)
+      </label>
+      <label>
+        <input type="checkbox" id="chkLineBreaks">
+        Remove line breaks
+      </label>
+      <label>
+        <input type="checkbox" id="chkEmDash">
+        Replace <code> - </code> (space&#8209;hyphen&#8209;space) with em dash (&mdash;)
+      </label>
+    </div>
+
+    <div class="text-area-wrapper">
+      <textarea id="inputText" placeholder="Paste or type your text here…"></textarea>
+    </div>
+
+    <div class="actions">
+      <button id="applyBtn">Apply</button>
+      <button id="copyBtn">Copy</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Transformation functions ---
+
+    function smartQuotes(text) {
+      // Apostrophes: letter before and/or after
+      // Opening double quote: after whitespace, start, or open bracket
+      // Closing double quote: before whitespace, end, or punctuation
+
+      // Single closing / apostrophe: after a word character
+      text = text.replace(/(\w)'(\w)/g, '$1\u2019$2');          // apostrophe between word chars (it's, don't)
+      text = text.replace(/(\w)'([^'"]|$)/g, '$1\u2019$2');     // closing after word char
+
+      // Opening single quote: after whitespace / start / open bracket
+      text = text.replace(/(^|[\s([{])'(?=\S)/gm, '$1\u2018');
+
+      // Remaining single quotes → closing
+      text = text.replace(/'/g, '\u2019');
+
+      // Opening double quote: before a non-space character, preceded by space/start/bracket
+      text = text.replace(/(^|[\s([{])"(?=\S)/gm, '$1\u201C');
+
+      // Closing double quote: after a non-space character
+      text = text.replace(/(\S)"/g, '$1\u201D');
+
+      // Any remaining double quotes → closing (catches trailing ones)
+      text = text.replace(/"/g, '\u201D');
+
+      return text;
+    }
+
+    // Title case: capitalize first letter of each "major" word.
+    // Minor words (articles, short prepositions, conjunctions) stay lowercase
+    // unless they are the first or last word.
+    const MINOR_WORDS = new Set([
+      'a', 'an', 'the',
+      'and', 'but', 'or', 'nor', 'for', 'so', 'yet',
+      'as', 'at', 'by', 'in', 'of', 'on', 'to', 'up',
+      'via', 'per'
+    ]);
+
+    function toTitleCase(text) {
+      // Process each line independently so first/last word rules apply per line
+      return text.split('\n').map(line => {
+        const words = line.split(' ');
+        return words.map((word, i) => {
+          if (!word) return word;
+          const isFirst = i === 0;
+          const isLast = i === words.length - 1;
+          const lower = word.toLowerCase();
+          if (!isFirst && !isLast && MINOR_WORDS.has(lower)) return lower;
+          // Capitalize first alphabetic character (handles leading punctuation)
+          return word.replace(/^([^a-zA-Z]*)([a-zA-Z])/, (_, pre, ch) => pre + ch.toUpperCase());
+        }).join(' ');
+      }).join('\n');
+    }
+
+    function collapseWhitespace(text) {
+      // Replace tabs and other horizontal whitespace with a regular space, then collapse multiples
+      text = text.replace(/[^\S\n]/g, ' ');   // non-newline whitespace → space
+      text = text.replace(/ {2,}/g, ' ');     // collapse multiple spaces
+      return text;
+    }
+
+    function removeLineBreaks(text) {
+      // Replace newlines (and carriage returns) with a single space, then collapse
+      text = text.replace(/[\r\n]+/g, ' ');
+      text = text.replace(/ {2,}/g, ' ');
+      return text.trim();
+    }
+
+    function replaceHyphenWithEmDash(text) {
+      return text.replace(/ - /g, '\u2014');
+    }
+
+    // --- UI wiring ---
+
+    const inputText = document.getElementById('inputText');
+    const applyBtn  = document.getElementById('applyBtn');
+    const copyBtn   = document.getElementById('copyBtn');
+    const clearBtn  = document.getElementById('clearBtn');
+
+    const chkSmartQuotes = document.getElementById('chkSmartQuotes');
+    const chkTitleCase   = document.getElementById('chkTitleCase');
+    const chkWhitespace  = document.getElementById('chkWhitespace');
+    const chkLineBreaks  = document.getElementById('chkLineBreaks');
+    const chkEmDash      = document.getElementById('chkEmDash');
+
+    applyBtn.addEventListener('click', () => {
+      let text = inputText.value;
+
+      // Order matters: whitespace/line-break cleanup before smart quotes/em-dash
+      if (chkLineBreaks.checked)  text = removeLineBreaks(text);
+      if (chkWhitespace.checked)  text = collapseWhitespace(text);
+      if (chkEmDash.checked)      text = replaceHyphenWithEmDash(text);
+      if (chkTitleCase.checked)   text = toTitleCase(text);
+      if (chkSmartQuotes.checked) text = smartQuotes(text);
+
+      inputText.value = text;
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!inputText.value) return;
+      try {
+        await navigator.clipboard.writeText(inputText.value);
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy';
+          copyBtn.classList.remove('copied');
+        }, 1500);
+      } catch {
+        inputText.select();
+        document.execCommand('copy');
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      inputText.value = '';
+      inputText.focus();
+    });
+  </script>
+</body>
+</html>
