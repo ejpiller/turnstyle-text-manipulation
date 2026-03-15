@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Text Tools</title>
+  <title>Turnstyle</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Lora', Georgia, serif;
+      font-family: 'Inter', system-ui, sans-serif;
       background: #f5f5f5;
       color: #222;
       min-height: 100vh;
@@ -291,7 +291,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Text Tools</h1>
+    <h1>Turnstyle</h1>
 
     <div class="options">
       <div class="options-header">
@@ -349,6 +349,10 @@
             </label>
           </span>
         </div>
+        <label>
+          <input type="checkbox" id="chkEllipsis">
+          Ellipsis (... &#8594; &#8230;)
+        </label>
       </div>
       <div class="option-group">
         <h2>Capitalization</h2>
@@ -367,7 +371,7 @@
           </label>
           <label>
             <input type="radio" name="capStyle" id="rdoAllCaps" value="allcaps">
-            All caps
+            Uppercase
           </label>
           <label>
             <input type="radio" name="capStyle" id="rdoLowercase" value="lowercase">
@@ -475,6 +479,10 @@
       return text.replace(/ - /g, '\u00A0\u2013 ');
     }
 
+    function convertEllipsis(text) {
+      return text.replace(/\.\.\./g, '\u2026');
+    }
+
     function straightQuotes(text) {
       text = text.replace(/[\u2018\u2019]/g, "'");
       text = text.replace(/[\u201C\u201D]/g, '"');
@@ -518,6 +526,7 @@
     const rdoTypographic    = document.getElementById('rdoTypographic');
     const rdoStraight       = document.getElementById('rdoStraight');
     const quotesChoices     = document.getElementById('quotesChoices');
+    const chkEllipsis       = document.getElementById('chkEllipsis');
     const chkCapitalization = document.getElementById('chkCapitalization');
     const rdoTitleCase      = document.getElementById('rdoTitleCase');
     const rdoSentenceCase   = document.getElementById('rdoSentenceCase');
@@ -525,7 +534,7 @@
     const rdoLowercase      = document.getElementById('rdoLowercase');
     const capChoices        = document.getElementById('capChoices');
 
-    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkQuotes, chkCapitalization];
+    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkCapitalization];
 
     function setGroupEnabled(checkbox, choicesEl, radios) {
       const on = checkbox.checked;
@@ -567,6 +576,7 @@
       if (chkWhitespace.checked)                          text = collapseWhitespace(text);
       if (chkDash.checked && rdoEmDash.checked)           text = replaceHyphenWithEmDash(text);
       if (chkDash.checked && rdoEnDash.checked)           text = replaceHyphenWithEnDash(text);
+      if (chkEllipsis.checked)                            text = convertEllipsis(text);
       if (chkCapitalization.checked && rdoTitleCase.checked)    text = toTitleCase(text);
       if (chkCapitalization.checked && rdoSentenceCase.checked) text = toSentenceCase(text);
       if (chkCapitalization.checked && rdoAllCaps.checked)      text = toAllCaps(text);
