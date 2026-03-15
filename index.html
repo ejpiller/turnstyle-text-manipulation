@@ -138,6 +138,19 @@
       pointer-events: none;
     }
 
+    .cap-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding-left: 1.6rem;
+      margin-top: 0.2rem;
+    }
+
+    .cap-choices.muted {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
     .info {
       display: inline-flex;
       align-items: center;
@@ -303,17 +316,47 @@
             </label>
           </span>
         </div>
-        <label>
-          <input type="checkbox" id="chkSmartQuotes">
-          Smart quotes (straight quotes and apostrophes to curly)
-        </label>
+        <div class="dash-row">
+          <label>
+            <input type="checkbox" id="chkQuotes">
+            Quotation marks and apostrophes
+          </label>
+          <span class="dash-choices muted" id="quotesChoices">
+            <label>
+              <input type="radio" name="quotesStyle" id="rdoTypographic" value="typographic" checked>
+              Typographic
+            </label>
+            <label>
+              <input type="radio" name="quotesStyle" id="rdoStraight" value="straight">
+              Straight
+            </label>
+          </span>
+        </div>
       </div>
       <div class="option-group">
         <h2>Capitalization</h2>
         <label>
-          <input type="checkbox" id="chkTitleCase">
-          Title case
+          <input type="checkbox" id="chkCapitalization">
+          Transform capitalization
         </label>
+        <div class="cap-choices muted" id="capChoices">
+          <label>
+            <input type="radio" name="capStyle" id="rdoTitleCase" value="title" checked>
+            Title case
+          </label>
+          <label>
+            <input type="radio" name="capStyle" id="rdoSentenceCase" value="sentence">
+            Sentence case
+          </label>
+          <label>
+            <input type="radio" name="capStyle" id="rdoAllCaps" value="allcaps">
+            All caps
+          </label>
+          <label>
+            <input type="radio" name="capStyle" id="rdoLowercase" value="lowercase">
+            Lowercase
+          </label>
+        </div>
       </div>
     </div>
 
@@ -415,6 +458,27 @@
       return text.replace(/ - /g, '\u00A0\u2013 ');
     }
 
+    function straightQuotes(text) {
+      text = text.replace(/[\u2018\u2019]/g, "'");
+      text = text.replace(/[\u201C\u201D]/g, '"');
+      return text;
+    }
+
+    function toAllCaps(text) {
+      return text.toUpperCase();
+    }
+
+    function toLowercase(text) {
+      return text.toLowerCase();
+    }
+
+    function toSentenceCase(text) {
+      // Lowercase everything, then capitalize the first letter of each sentence.
+      // Sentence starts: beginning of string/line, or after . ! ? followed by whitespace.
+      return text.toLowerCase()
+        .replace(/(^|[.!?]\s+)([a-z])/gm, (_, pre, ch) => pre + ch.toUpperCase());
+    }
+
     // --- UI wiring ---
 
     const inputText    = document.getElementById('inputText');
@@ -427,33 +491,52 @@
 
     let originalText = null;
 
-    const chkSmartQuotes = document.getElementById('chkSmartQuotes');
-    const chkTitleCase   = document.getElementById('chkTitleCase');
-    const chkWhitespace  = document.getElementById('chkWhitespace');
-    const chkLineBreaks  = document.getElementById('chkLineBreaks');
-    const chkDash        = document.getElementById('chkDash');
-    const rdoEmDash      = document.getElementById('rdoEmDash');
-    const rdoEnDash      = document.getElementById('rdoEnDash');
-    const dashChoices    = document.getElementById('dashChoices');
+    const chkWhitespace     = document.getElementById('chkWhitespace');
+    const chkLineBreaks     = document.getElementById('chkLineBreaks');
+    const chkDash           = document.getElementById('chkDash');
+    const rdoEmDash         = document.getElementById('rdoEmDash');
+    const rdoEnDash         = document.getElementById('rdoEnDash');
+    const dashChoices       = document.getElementById('dashChoices');
+    const chkQuotes         = document.getElementById('chkQuotes');
+    const rdoTypographic    = document.getElementById('rdoTypographic');
+    const rdoStraight       = document.getElementById('rdoStraight');
+    const quotesChoices     = document.getElementById('quotesChoices');
+    const chkCapitalization = document.getElementById('chkCapitalization');
+    const rdoTitleCase      = document.getElementById('rdoTitleCase');
+    const rdoSentenceCase   = document.getElementById('rdoSentenceCase');
+    const rdoAllCaps        = document.getElementById('rdoAllCaps');
+    const rdoLowercase      = document.getElementById('rdoLowercase');
+    const capChoices        = document.getElementById('capChoices');
 
-    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkSmartQuotes, chkTitleCase];
+    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkQuotes, chkCapitalization];
 
-    function setDashChoicesEnabled(enabled) {
-      dashChoices.classList.toggle('muted', !enabled);
-      rdoEmDash.disabled = !enabled;
-      rdoEnDash.disabled = !enabled;
+    function setGroupEnabled(checkbox, choicesEl, radios) {
+      const on = checkbox.checked;
+      choicesEl.classList.toggle('muted', !on);
+      radios.forEach(r => r.disabled = !on);
     }
 
-    chkDash.addEventListener('change', () => setDashChoicesEnabled(chkDash.checked));
+    chkDash.addEventListener('change', () =>
+      setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]));
+
+    chkQuotes.addEventListener('change', () =>
+      setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]));
+
+    chkCapitalization.addEventListener('change', () =>
+      setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]));
 
     selectAllBtn.addEventListener('click', () => {
       allCheckboxes.forEach(c => c.checked = true);
-      setDashChoicesEnabled(true);
+      setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]);
+      setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]);
+      setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]);
     });
 
     clearAllBtn.addEventListener('click', () => {
       allCheckboxes.forEach(c => c.checked = false);
-      setDashChoicesEnabled(false);
+      setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]);
+      setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]);
+      setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]);
     });
 
     applyBtn.addEventListener('click', () => {
@@ -462,13 +545,17 @@
 
       let text = originalText;
 
-      // Order matters: whitespace cleanup first, then punctuation, then capitalization
-      if (chkLineBreaks.checked)               text = removeLineBreaks(text);
-      if (chkWhitespace.checked)               text = collapseWhitespace(text);
-      if (chkDash.checked && rdoEmDash.checked) text = replaceHyphenWithEmDash(text);
-      if (chkDash.checked && rdoEnDash.checked) text = replaceHyphenWithEnDash(text);
-      if (chkTitleCase.checked)                text = toTitleCase(text);
-      if (chkSmartQuotes.checked)              text = smartQuotes(text);
+      // Order: whitespace → dashes → capitalization → quotes
+      if (chkLineBreaks.checked)                          text = removeLineBreaks(text);
+      if (chkWhitespace.checked)                          text = collapseWhitespace(text);
+      if (chkDash.checked && rdoEmDash.checked)           text = replaceHyphenWithEmDash(text);
+      if (chkDash.checked && rdoEnDash.checked)           text = replaceHyphenWithEnDash(text);
+      if (chkCapitalization.checked && rdoTitleCase.checked)    text = toTitleCase(text);
+      if (chkCapitalization.checked && rdoSentenceCase.checked) text = toSentenceCase(text);
+      if (chkCapitalization.checked && rdoAllCaps.checked)      text = toAllCaps(text);
+      if (chkCapitalization.checked && rdoLowercase.checked)    text = toLowercase(text);
+      if (chkQuotes.checked && rdoTypographic.checked)    text = smartQuotes(text);
+      if (chkQuotes.checked && rdoStraight.checked)       text = straightQuotes(text);
 
       inputText.value = text;
     });
