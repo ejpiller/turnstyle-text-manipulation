@@ -37,19 +37,30 @@
       background: #fff;
       border: 1px solid #ddd;
       border-radius: 10px;
-      padding: 1rem 1.25rem;
+      padding: 0.75rem 1.25rem 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
+      gap: 0;
     }
 
-    .options h2 {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem 0;
+    }
+
+    .option-group + .option-group {
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .option-group h2 {
+      font-size: 0.7rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #888;
-      margin-bottom: 0.25rem;
+      letter-spacing: 0.07em;
+      color: #aaa;
+      margin-bottom: 0.1rem;
     }
 
     label {
@@ -62,7 +73,8 @@
       user-select: none;
     }
 
-    label input[type="checkbox"] {
+    label input[type="checkbox"],
+    label input[type="radio"] {
       width: 1rem;
       height: 1rem;
       margin-top: 0.15rem;
@@ -155,27 +167,39 @@
     <h1>Text Tools</h1>
 
     <div class="options">
-      <h2>Transformations</h2>
-      <label>
-        <input type="checkbox" id="chkSmartQuotes">
-        Convert straight quotes &amp; apostrophes to typographer&#8217;s (&#8220;smart&#8221;) quotes
-      </label>
-      <label>
-        <input type="checkbox" id="chkTitleCase">
-        Apply title capitalization
-      </label>
-      <label>
-        <input type="checkbox" id="chkWhitespace">
-        Remove double spaces, tabs, and nonstandard whitespace (collapse to single spaces)
-      </label>
-      <label>
-        <input type="checkbox" id="chkLineBreaks">
-        Remove line breaks
-      </label>
-      <label>
-        <input type="checkbox" id="chkEmDash">
-        Replace <code> - </code> (space&#8209;hyphen&#8209;space) with em dash (&mdash;)
-      </label>
+      <div class="option-group">
+        <h2>Whitespace</h2>
+        <label>
+          <input type="checkbox" id="chkLineBreaks">
+          Remove line breaks
+        </label>
+        <label>
+          <input type="checkbox" id="chkWhitespace">
+          Collapse extra whitespace (tabs and multiple spaces to single space)
+        </label>
+      </div>
+      <div class="option-group">
+        <h2>Typography</h2>
+        <label>
+          <input type="radio" name="dashStyle" id="chkEmDash" value="em">
+          Em dashes (&#8220; - &#8221; &#8594; &#8220;&#8212;&#8221;)
+        </label>
+        <label>
+          <input type="radio" name="dashStyle" id="chkEnDash" value="en">
+          En dashes (&#8220; - &#8221; &#8594; nonbreaking space + en dash + space)
+        </label>
+        <label>
+          <input type="checkbox" id="chkSmartQuotes">
+          Smart quotes (straight quotes and apostrophes to curly)
+        </label>
+      </div>
+      <div class="option-group">
+        <h2>Capitalization</h2>
+        <label>
+          <input type="checkbox" id="chkTitleCase">
+          Title case
+        </label>
+      </div>
     </div>
 
     <div class="text-area-wrapper">
@@ -233,17 +257,18 @@
     function toTitleCase(text) {
       // Process each line independently so first/last word rules apply per line
       return text.split('\n').map(line => {
-        // Split on spaces, but also treat em dashes as segment boundaries so the
-        // word immediately after an em dash is considered a "first" word.
         const words = line.split(' ');
         const lastIdx = words.length - 1;
         return words.map((word, i) => {
           if (!word) return word;
+          // A word is a "segment start" if it follows an em dash (same token, split below)
+          // or follows an en dash (previous token ends with en dash \u2013)
+          const prevEndsWithEnDash = i > 0 && words[i - 1].endsWith('\u2013');
           // Split the token on em dashes so each part can be capitalized independently
           const parts = word.split('\u2014');
           return parts.map((part, pi) => {
             if (!part) return part;
-            const isFirst = (i === 0 && pi === 0) || pi > 0;
+            const isFirst = (i === 0 && pi === 0) || pi > 0 || (prevEndsWithEnDash && pi === 0);
             const isLast  = i === lastIdx && pi === parts.length - 1;
             const lower   = part.toLowerCase();
             if (!isFirst && !isLast && MINOR_WORDS.has(lower)) return lower;
@@ -271,6 +296,10 @@
       return text.replace(/ - /g, '\u2014');
     }
 
+    function replaceHyphenWithEnDash(text) {
+      return text.replace(/ - /g, '\u00A0\u2013 ');
+    }
+
     // --- UI wiring ---
 
     const inputText = document.getElementById('inputText');
@@ -286,6 +315,7 @@
     const chkWhitespace  = document.getElementById('chkWhitespace');
     const chkLineBreaks  = document.getElementById('chkLineBreaks');
     const chkEmDash      = document.getElementById('chkEmDash');
+    const chkEnDash      = document.getElementById('chkEnDash');
 
     applyBtn.addEventListener('click', () => {
       originalText = inputText.value;
@@ -293,10 +323,11 @@
 
       let text = originalText;
 
-      // Order matters: whitespace/line-break cleanup before smart quotes/em-dash
+      // Order matters: whitespace cleanup first, then punctuation, then capitalization
       if (chkLineBreaks.checked)  text = removeLineBreaks(text);
       if (chkWhitespace.checked)  text = collapseWhitespace(text);
       if (chkEmDash.checked)      text = replaceHyphenWithEmDash(text);
+      if (chkEnDash.checked)      text = replaceHyphenWithEnDash(text);
       if (chkTitleCase.checked)   text = toTitleCase(text);
       if (chkSmartQuotes.checked) text = smartQuotes(text);
 
