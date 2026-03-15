@@ -124,6 +124,18 @@
 
     #copyBtn:hover { background: #d1d5db; }
 
+    #resetBtn {
+      background: #e5e7eb;
+      color: #222;
+    }
+
+    #resetBtn:hover { background: #d1d5db; }
+
+    #resetBtn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
     #clearBtn {
       background: #e5e7eb;
       color: #222;
@@ -172,6 +184,7 @@
 
     <div class="actions">
       <button id="applyBtn">Apply</button>
+      <button id="resetBtn" disabled>Reset</button>
       <button id="copyBtn">Copy</button>
       <button id="clearBtn">Clear</button>
     </div>
@@ -220,15 +233,22 @@
     function toTitleCase(text) {
       // Process each line independently so first/last word rules apply per line
       return text.split('\n').map(line => {
+        // Split on spaces, but also treat em dashes as segment boundaries so the
+        // word immediately after an em dash is considered a "first" word.
         const words = line.split(' ');
+        const lastIdx = words.length - 1;
         return words.map((word, i) => {
           if (!word) return word;
-          const isFirst = i === 0;
-          const isLast = i === words.length - 1;
-          const lower = word.toLowerCase();
-          if (!isFirst && !isLast && MINOR_WORDS.has(lower)) return lower;
-          // Capitalize first alphabetic character (handles leading punctuation)
-          return word.replace(/^([^a-zA-Z]*)([a-zA-Z])/, (_, pre, ch) => pre + ch.toUpperCase());
+          // Split the token on em dashes so each part can be capitalized independently
+          const parts = word.split('\u2014');
+          return parts.map((part, pi) => {
+            if (!part) return part;
+            const isFirst = (i === 0 && pi === 0) || pi > 0;
+            const isLast  = i === lastIdx && pi === parts.length - 1;
+            const lower   = part.toLowerCase();
+            if (!isFirst && !isLast && MINOR_WORDS.has(lower)) return lower;
+            return part.replace(/^([^a-zA-Z]*)([a-zA-Z])/, (_, pre, ch) => pre + ch.toUpperCase());
+          }).join('\u2014');
         }).join(' ');
       }).join('\n');
     }
@@ -255,8 +275,11 @@
 
     const inputText = document.getElementById('inputText');
     const applyBtn  = document.getElementById('applyBtn');
+    const resetBtn  = document.getElementById('resetBtn');
     const copyBtn   = document.getElementById('copyBtn');
     const clearBtn  = document.getElementById('clearBtn');
+
+    let originalText = null;
 
     const chkSmartQuotes = document.getElementById('chkSmartQuotes');
     const chkTitleCase   = document.getElementById('chkTitleCase');
@@ -265,7 +288,10 @@
     const chkEmDash      = document.getElementById('chkEmDash');
 
     applyBtn.addEventListener('click', () => {
-      let text = inputText.value;
+      originalText = inputText.value;
+      resetBtn.disabled = false;
+
+      let text = originalText;
 
       // Order matters: whitespace/line-break cleanup before smart quotes/em-dash
       if (chkLineBreaks.checked)  text = removeLineBreaks(text);
@@ -275,6 +301,14 @@
       if (chkSmartQuotes.checked) text = smartQuotes(text);
 
       inputText.value = text;
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (originalText !== null) {
+        inputText.value = originalText;
+        originalText = null;
+        resetBtn.disabled = true;
+      }
     });
 
     copyBtn.addEventListener('click', async () => {
@@ -295,6 +329,8 @@
 
     clearBtn.addEventListener('click', () => {
       inputText.value = '';
+      originalText = null;
+      resetBtn.disabled = true;
       inputText.focus();
     });
   </script>
