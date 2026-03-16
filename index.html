@@ -287,6 +287,13 @@
       background: #d1fae5;
       color: #065f46;
     }
+
+    .text-stats {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
@@ -383,6 +390,10 @@
 
     <div class="text-area-wrapper">
       <textarea id="inputText" placeholder="Paste or type your text here…"></textarea>
+    </div>
+    <div class="text-stats">
+      <span id="wordCount">0 words</span>
+      <span id="charCount">0 characters</span>
     </div>
 
     <div class="actions">
@@ -534,6 +545,19 @@
     const rdoLowercase      = document.getElementById('rdoLowercase');
     const capChoices        = document.getElementById('capChoices');
 
+    const wordCountEl = document.getElementById('wordCount');
+    const charCountEl = document.getElementById('charCount');
+
+    function updateStats() {
+      const text = inputText.value;
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      const chars = text.length;
+      wordCountEl.textContent = words === 1 ? '1 word' : `${words} words`;
+      charCountEl.textContent = chars === 1 ? '1 character' : `${chars} characters`;
+    }
+
+    inputText.addEventListener('input', updateStats);
+
     const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkCapitalization];
 
     function setGroupEnabled(checkbox, choicesEl, radios) {
@@ -585,6 +609,7 @@
       if (chkQuotes.checked && rdoStraight.checked)       text = straightQuotes(text);
 
       inputText.value = text;
+      updateStats();
     });
 
     resetBtn.addEventListener('click', () => {
@@ -592,6 +617,7 @@
         inputText.value = originalText;
         originalText = null;
         resetBtn.disabled = true;
+        updateStats();
       }
     });
 
@@ -615,6 +641,7 @@
       inputText.value = '';
       originalText = null;
       resetBtn.disabled = true;
+      updateStats();
       inputText.focus();
     });
   </script>
