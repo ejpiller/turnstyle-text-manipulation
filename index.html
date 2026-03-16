@@ -344,11 +344,11 @@
       <div class="option-group">
         <h2>Whitespace</h2>
         <label>
-          <input type="checkbox" id="chkLineBreaks">
+          <input type="checkbox" id="chkLineBreaks" checked>
           Remove line breaks
         </label>
         <label>
-          <input type="checkbox" id="chkWhitespace">
+          <input type="checkbox" id="chkWhitespace" checked>
           Collapse extra whitespace
           <i class="info" data-tip="Converts tabs and other non-standard horizontal whitespace to spaces, then collapses multiple consecutive spaces into one.">i</i>
         </label>
@@ -357,10 +357,10 @@
         <h2>Typography</h2>
         <div class="dash-row">
           <label>
-            <input type="checkbox" id="chkDash">
+            <input type="checkbox" id="chkDash" checked>
             Dashes
           </label>
-          <span class="dash-choices muted" id="dashChoices">
+          <span class="dash-choices" id="dashChoices">
             <label>
               <input type="radio" name="dashStyle" id="rdoEmDash" value="em" checked>
               Em dash
@@ -374,10 +374,10 @@
         </div>
         <div class="dash-row">
           <label>
-            <input type="checkbox" id="chkQuotes">
+            <input type="checkbox" id="chkQuotes" checked>
             Quotation marks and apostrophes
           </label>
-          <span class="dash-choices muted" id="quotesChoices">
+          <span class="dash-choices" id="quotesChoices">
             <label>
               <input type="radio" name="quotesStyle" id="rdoTypographic" value="typographic" checked>
               Typographic
@@ -389,7 +389,7 @@
           </span>
         </div>
         <label>
-          <input type="checkbox" id="chkEllipsis">
+          <input type="checkbox" id="chkEllipsis" checked>
           Ellipses (... &#8594; &#8230;)
         </label>
       </div>
@@ -893,6 +893,9 @@
       updateStats();
       inputText.focus();
     });
+
+    // Initialise group enabled/muted state to match default checked state
+    syncAllGroups();
   </script>
 </body>
 </html>
