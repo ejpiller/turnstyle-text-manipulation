@@ -516,11 +516,19 @@
     }
 
     function replaceHyphenWithEmDash(text) {
-      return text.replace(/ - /g, '\u2014');
+      // Any space + hyphen + any space → em dash (no spaces)
+      text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]-[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]/g, '\u2014');
+      // Any space + en dash + any space → em dash (no spaces)
+      text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]\u2013[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]/g, '\u2014');
+      return text;
     }
 
     function replaceHyphenWithEnDash(text) {
-      return text.replace(/ - /g, '\u00A0\u2013 ');
+      // Any space + hyphen + any space → nbsp + en dash + space
+      text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]-[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]/g, '\u00A0\u2013 ');
+      // Em dash (with or without surrounding spaces) → nbsp + en dash + space
+      text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]?\u2014[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]?/g, '\u00A0\u2013 ');
+      return text;
     }
 
     function convertEllipsis(text) {
