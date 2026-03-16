@@ -394,6 +394,24 @@
         </label>
       </div>
       <div class="option-group">
+        <h2>Language</h2>
+        <label>
+          <input type="checkbox" id="chkEnglish">
+          English variant
+          <i class="info" data-tip="Converts spelling (e.g., color/colour, organize/organise), swaps primary quotation mark style (double ↔ single), and moves periods and commas inside or outside closing quotation marks. Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms.">i</i>
+        </label>
+        <div class="cap-choices muted" id="englishChoices">
+          <label>
+            <input type="radio" name="englishStyle" id="rdoUS" value="us" checked>
+            US English
+          </label>
+          <label>
+            <input type="radio" name="englishStyle" id="rdoUK" value="uk">
+            UK English
+          </label>
+        </div>
+      </div>
+      <div class="option-group">
         <h2>Capitalization</h2>
         <label>
           <input type="checkbox" id="chkCapitalization">
@@ -541,6 +559,184 @@
       return text;
     }
 
+    // --- US / UK English conversion ---
+
+    // Common spelling pairs: [US, UK]
+    const SPELLING_PAIRS = [
+      // -ize / -ise
+      ['recognize', 'recognise'], ['organize', 'organise'], ['realize', 'realise'],
+      ['apologize', 'apologise'], ['authorize', 'authorise'], ['capitalize', 'capitalise'],
+      ['categorize', 'categorise'], ['characterize', 'characterise'], ['civilize', 'civilise'],
+      ['colonize', 'colonise'], ['criticize', 'criticise'], ['customize', 'customise'],
+      ['dramatize', 'dramatise'], ['emphasize', 'emphasise'], ['energize', 'energise'],
+      ['equalize', 'equalise'], ['familiarize', 'familiarise'], ['fertilize', 'fertilise'],
+      ['finalize', 'finalise'], ['generalize', 'generalise'], ['globalize', 'globalise'],
+      ['harmonize', 'harmonise'], ['hospitalize', 'hospitalise'], ['hypothesize', 'hypothesise'],
+      ['idealize', 'idealise'], ['immunize', 'immunise'], ['initialize', 'initialise'],
+      ['itemize', 'itemise'], ['jeopardize', 'jeopardise'], ['legalize', 'legalise'],
+      ['liberalize', 'liberalise'], ['localize', 'localise'], ['maximize', 'maximise'],
+      ['memorize', 'memorise'], ['minimize', 'minimise'], ['mobilize', 'mobilise'],
+      ['modernize', 'modernise'], ['monopolize', 'monopolise'], ['nationalize', 'nationalise'],
+      ['neutralize', 'neutralise'], ['normalize', 'normalise'], ['optimize', 'optimise'],
+      ['patronize', 'patronise'], ['penalize', 'penalise'], ['polarize', 'polarise'],
+      ['pressurize', 'pressurise'], ['prioritize', 'prioritise'], ['privatize', 'privatise'],
+      ['publicize', 'publicise'], ['radicalize', 'radicalise'], ['rationalize', 'rationalise'],
+      ['revolutionize', 'revolutionise'], ['romanticize', 'romanticise'],
+      ['scrutinize', 'scrutinise'], ['specialize', 'specialise'], ['stabilize', 'stabilise'],
+      ['standardize', 'standardise'], ['subsidize', 'subsidise'], ['summarize', 'summarise'],
+      ['symbolize', 'symbolise'], ['sympathize', 'sympathise'], ['synchronize', 'synchronise'],
+      ['terrorize', 'terrorise'], ['theorize', 'theorise'], ['traumatize', 'traumatise'],
+      ['trivialize', 'trivialise'], ['utilize', 'utilise'], ['vandalize', 'vandalise'],
+      ['visualize', 'visualise'],
+      // -ization / -isation
+      ['organization', 'organisation'], ['realization', 'realisation'],
+      ['authorization', 'authorisation'], ['capitalization', 'capitalisation'],
+      ['categorization', 'categorisation'], ['characterization', 'characterisation'],
+      ['civilization', 'civilisation'], ['colonization', 'colonisation'],
+      ['customization', 'customisation'], ['dramatization', 'dramatisation'],
+      ['equalization', 'equalisation'], ['fertilization', 'fertilisation'],
+      ['finalization', 'finalisation'], ['generalization', 'generalisation'],
+      ['globalization', 'globalisation'], ['harmonization', 'harmonisation'],
+      ['hospitalization', 'hospitalisation'], ['idealization', 'idealisation'],
+      ['immunization', 'immunisation'], ['initialization', 'initialisation'],
+      ['legalization', 'legalisation'], ['liberalization', 'liberalisation'],
+      ['localization', 'localisation'], ['maximization', 'maximisation'],
+      ['minimization', 'minimisation'], ['mobilization', 'mobilisation'],
+      ['modernization', 'modernisation'], ['monopolization', 'monopolisation'],
+      ['nationalization', 'nationalisation'], ['neutralization', 'neutralisation'],
+      ['normalization', 'normalisation'], ['optimization', 'optimisation'],
+      ['polarization', 'polarisation'], ['prioritization', 'prioritisation'],
+      ['privatization', 'privatisation'], ['radicalization', 'radicalisation'],
+      ['rationalization', 'rationalisation'], ['recognition', 'recognition'],
+      ['revolutionization', 'revolutionisation'], ['specialization', 'specialisation'],
+      ['stabilization', 'stabilisation'], ['standardization', 'standardisation'],
+      ['summarization', 'summarisation'], ['synchronization', 'synchronisation'],
+      ['visualization', 'visualisation'],
+      // -or / -our
+      ['color', 'colour'], ['favor', 'favour'], ['honor', 'honour'], ['humor', 'humour'],
+      ['labor', 'labour'], ['neighbor', 'neighbour'], ['behavior', 'behaviour'],
+      ['flavor', 'flavour'], ['harbor', 'harbour'], ['rumor', 'rumour'],
+      ['savior', 'saviour'], ['valor', 'valour'], ['vigor', 'vigour'],
+      ['glamor', 'glamour'], ['candor', 'candour'], ['clamor', 'clamour'],
+      ['endeavor', 'endeavour'], ['fervor', 'fervour'], ['odor', 'odour'],
+      ['rancor', 'rancour'], ['rigor', 'rigour'], ['splendor', 'splendour'],
+      ['tumor', 'tumour'], ['ardor', 'ardour'],
+      // -er / -re
+      ['center', 'centre'], ['theater', 'theatre'], ['fiber', 'fibre'],
+      ['liter', 'litre'], ['meter', 'metre'], ['saber', 'sabre'],
+      ['somber', 'sombre'], ['caliber', 'calibre'], ['specter', 'spectre'],
+      ['luster', 'lustre'], ['maneuver', 'manoeuvre'], ['meager', 'meagre'],
+      // -log / -logue
+      ['analog', 'analogue'], ['catalog', 'catalogue'], ['dialog', 'dialogue'],
+      ['monolog', 'monologue'], ['prolog', 'prologue'], ['epilog', 'epilogue'],
+      // -ense / -ence
+      ['defense', 'defence'], ['offense', 'offence'], ['license', 'licence'],
+      ['pretense', 'pretence'],
+      // -l- / -ll-
+      ['canceled', 'cancelled'], ['canceling', 'cancelling'],
+      ['traveled', 'travelled'], ['traveling', 'travelling'], ['traveler', 'traveller'],
+      ['modeled', 'modelled'], ['modeling', 'modelling'],
+      ['labeled', 'labelled'], ['labeling', 'labelling'],
+      ['leveled', 'levelled'], ['leveling', 'levelling'],
+      ['rivaled', 'rivalled'], ['rivaling', 'rivalling'],
+      ['signaled', 'signalled'], ['signaling', 'signalling'],
+      ['counselor', 'counsellor'], ['counseling', 'counselling'],
+      ['fueled', 'fuelled'], ['fueling', 'fuelling'],
+      ['jeweler', 'jeweller'], ['jewelry', 'jewellery'],
+      ['marvelous', 'marvellous'],
+      // -e / -ae / -oe
+      ['anemia', 'anaemia'], ['anesthetic', 'anaesthetic'], ['archeology', 'archaeology'],
+      ['pediatric', 'paediatric'], ['pediatrician', 'paediatrician'],
+      ['encyclopedia', 'encyclopaedia'], ['gynecology', 'gynaecology'],
+      ['hemoglobin', 'haemoglobin'], ['hemorrhage', 'haemorrhage'],
+      ['leukemia', 'leukaemia'], ['esophagus', 'oesophagus'],
+      ['estrogen', 'oestrogen'], ['fetus', 'foetus'], ['diarrhea', 'diarrhoea'],
+      // Miscellaneous common pairs
+      ['gray', 'grey'], ['aging', 'ageing'], ['judgment', 'judgement'],
+      ['acknowledgment', 'acknowledgement'], ['analog', 'analogue'],
+      ['airplane', 'aeroplane'], ['aluminum', 'aluminium'],
+      ['artifact', 'artefact'], ['check', 'cheque'], ['curb', 'kerb'],
+      ['draft', 'draught'], ['donut', 'doughnut'], ['fulfill', 'fulfil'],
+      ['installment', 'instalment'], ['jail', 'gaol'], ['mold', 'mould'],
+      ['molding', 'moulding'], ['molt', 'moult'], ['mustache', 'moustache'],
+      ['pajamas', 'pyjamas'], ['plow', 'plough'], ['program', 'programme'],
+      ['skeptic', 'sceptic'], ['skeptical', 'sceptical'], ['skepticism', 'scepticism'],
+      ['tire', 'tyre'], ['cozy', 'cosy'],
+    ];
+
+    // Build lookup maps for fast conversion
+    const US_TO_UK = new Map();
+    const UK_TO_US = new Map();
+    SPELLING_PAIRS.forEach(([us, uk]) => {
+      if (us !== uk) {
+        US_TO_UK.set(us, uk);
+        UK_TO_US.set(uk, us);
+      }
+    });
+
+    function replaceSpellingWord(word, map) {
+      const lower = word.toLowerCase();
+      const replacement = map.get(lower);
+      if (!replacement) return word;
+      // Preserve original casing pattern
+      if (word === word.toUpperCase()) return replacement.toUpperCase();
+      if (word[0] === word[0].toUpperCase() && word.slice(1) === word.slice(1).toLowerCase()) {
+        return replacement[0].toUpperCase() + replacement.slice(1);
+      }
+      return replacement;
+    }
+
+    function convertSpelling(text, map) {
+      return text.replace(/[a-zA-Z]+/g, word => replaceSpellingWord(word, map));
+    }
+
+    // Swap double ↔ single typographic quotes (for UK ↔ US primary/secondary quote style)
+    function swapQuoteLevels(text) {
+      // Temporarily replace singles with placeholders, then doubles→singles, then placeholders→doubles
+      text = text.replace(/\u2018/g, '\x01').replace(/\u2019/g, '\x02');
+      text = text.replace(/\u201C/g, '\u2018').replace(/\u201D/g, '\u2019');
+      text = text.replace(/\x01/g, '\u201C').replace(/\x02/g, '\u201D');
+      return text;
+    }
+
+    // US style: periods and commas go inside closing quotes
+    function punctuationInsideQuotes(text) {
+      // Move . and , from after closing quote to before it
+      // Handle double quotes
+      text = text.replace(/(\u201D)([.,])/g, '$2$1');
+      text = text.replace(/(\u2019)([.,])/g, '$2$1');
+      // Handle straight quotes too
+      text = text.replace(/(")([.,])/g, '$2$1');
+      text = text.replace(/(')([.,])/g, '$2$1');
+      return text;
+    }
+
+    // UK style: periods and commas go outside closing quotes
+    function punctuationOutsideQuotes(text) {
+      // Move . and , from before closing quote to after it
+      // Handle double quotes
+      text = text.replace(/([.,])(\u201D)/g, '$2$1');
+      text = text.replace(/([.,])(\u2019)/g, '$2$1');
+      // Handle straight quotes too
+      text = text.replace(/([.,])(")/g, '$2$1');
+      text = text.replace(/([.,])(')/g, '$2$1');
+      return text;
+    }
+
+    function convertToUS(text) {
+      text = convertSpelling(text, UK_TO_US);
+      text = swapQuoteLevels(text);           // UK single→US double primary
+      text = punctuationInsideQuotes(text);
+      return text;
+    }
+
+    function convertToUK(text) {
+      text = convertSpelling(text, US_TO_UK);
+      text = swapQuoteLevels(text);           // US double→UK single primary
+      text = punctuationOutsideQuotes(text);
+      return text;
+    }
+
     function toAllCaps(text) {
       return text.toUpperCase();
     }
@@ -579,6 +775,10 @@
     const rdoStraight       = document.getElementById('rdoStraight');
     const quotesChoices     = document.getElementById('quotesChoices');
     const chkEllipsis       = document.getElementById('chkEllipsis');
+    const chkEnglish        = document.getElementById('chkEnglish');
+    const rdoUS             = document.getElementById('rdoUS');
+    const rdoUK             = document.getElementById('rdoUK');
+    const englishChoices    = document.getElementById('englishChoices');
     const chkCapitalization = document.getElementById('chkCapitalization');
     const rdoTitleCase      = document.getElementById('rdoTitleCase');
     const rdoSentenceCase   = document.getElementById('rdoSentenceCase');
@@ -599,7 +799,7 @@
 
     inputText.addEventListener('input', updateStats);
 
-    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkCapitalization];
+    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkEnglish, chkCapitalization];
 
     function setGroupEnabled(checkbox, choicesEl, radios) {
       const on = checkbox.checked;
@@ -613,21 +813,27 @@
     chkQuotes.addEventListener('change', () =>
       setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]));
 
+    chkEnglish.addEventListener('change', () =>
+      setGroupEnabled(chkEnglish, englishChoices, [rdoUS, rdoUK]));
+
     chkCapitalization.addEventListener('change', () =>
       setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]));
 
-    selectAllBtn.addEventListener('click', () => {
-      allCheckboxes.forEach(c => c.checked = true);
+    function syncAllGroups() {
       setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]);
       setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]);
+      setGroupEnabled(chkEnglish, englishChoices, [rdoUS, rdoUK]);
       setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]);
+    }
+
+    selectAllBtn.addEventListener('click', () => {
+      allCheckboxes.forEach(c => c.checked = true);
+      syncAllGroups();
     });
 
     clearAllBtn.addEventListener('click', () => {
       allCheckboxes.forEach(c => c.checked = false);
-      setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]);
-      setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]);
-      setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]);
+      syncAllGroups();
     });
 
     applyBtn.addEventListener('click', () => {
@@ -642,6 +848,8 @@
       if (chkDash.checked && rdoEmDash.checked)           text = replaceHyphenWithEmDash(text);
       if (chkDash.checked && rdoEnDash.checked)           text = replaceHyphenWithEnDash(text);
       if (chkEllipsis.checked)                            text = convertEllipsis(text);
+      if (chkEnglish.checked && rdoUS.checked)             text = convertToUS(text);
+      if (chkEnglish.checked && rdoUK.checked)             text = convertToUK(text);
       if (chkCapitalization.checked && rdoTitleCase.checked)    text = toTitleCase(text);
       if (chkCapitalization.checked && rdoSentenceCase.checked) text = toSentenceCase(text);
       if (chkCapitalization.checked && rdoAllCaps.checked)      text = toAllCaps(text);
