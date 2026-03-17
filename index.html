@@ -622,6 +622,9 @@
       text = text.replace(/ *[\r\n]+ *([\u201D\u2019"')\]}])/g, '$1');
       // Strip line break immediately before sentence punctuation
       text = text.replace(/[\r\n]+([?!.,;:])/g, '$1');
+      // Strip line breaks (and surrounding spaces) around em dashes
+      text = text.replace(/ *[\r\n]+ *(\u2014)/g, '$1');
+      text = text.replace(/(\u2014) *[\r\n]+ */g, '$1');
       // Replace remaining line breaks with a single space, then collapse
       text = text.replace(/[\r\n]+/g, ' ');
       text = text.replace(/ {2,}/g, ' ');
@@ -633,6 +636,8 @@
       text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]-[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]/g, '\u2014');
       // Any space + en dash + any space → em dash (no spaces)
       text = text.replace(/[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]\u2013[\s\u00A0\u202F\u2009\u2007\u2008\u200A\u205F\u3000]/g, '\u2014');
+      // Strip any spaces immediately around existing em dashes
+      text = text.replace(/ *\u2014 */g, '\u2014');
       return text;
     }
 
