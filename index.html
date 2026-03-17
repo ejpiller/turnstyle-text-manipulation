@@ -202,7 +202,7 @@
       border-radius: 50%;
       border: 1.5px solid #aaa;
       color: #aaa;
-      font-size: 0.72rem;
+      font-size: 0.65rem;
       font-style: normal;
       font-weight: 600;
       cursor: help;
@@ -405,6 +405,7 @@
           <label>
             <input type="checkbox" id="chkQuoteStyle">
             Quotation marks
+            <i class="info" data-tip="Converts all quotation marks to the selected style. Cannot reliably handle embedded quotes (quotes within quotes).">i</i>
           </label>
           <span class="dash-choices muted" id="quoteStyleChoices">
             <label>
@@ -435,11 +436,11 @@
         </div>
       </div>
       <div class="option-group">
-        <h2>Vocabulary</h2>
+        <h2>Spelling</h2>
         <label>
           <input type="checkbox" id="chkEnglish">
           English variant
-          <i class="info" data-tip="Converts spelling only (e.g., color/colour, organize/organise). Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms. Use with caution.">i</i>
+          <i class="info" data-tip="Converts spelling only (e.g., color/colour, organize/organise). Does not convert vocabulary (e.g., elevator/lift) or idioms. Use with caution.">i</i>
         </label>
         <div class="cap-choices muted" id="englishChoices">
           <label>
