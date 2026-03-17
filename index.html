@@ -54,6 +54,11 @@
       grid-column: 1 / -1;
     }
 
+    .container.layout-stacked {
+      grid-template-columns: 1fr;
+      max-width: 760px;
+    }
+
     @media (max-width: 640px) {
       .container {
         grid-template-columns: 1fr;
@@ -62,6 +67,23 @@
       .site-header {
         grid-column: 1;
       }
+    }
+
+    .layout-footer {
+      padding-top: 0.6rem;
+      margin-top: 0.25rem;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    #layoutToggleBtn {
+      color: #bbb;
+      font-size: 0.78rem;
+      font-weight: 400;
+    }
+
+    #layoutToggleBtn:hover {
+      color: #2563eb;
+      text-decoration: none;
     }
 
     .options {
@@ -477,6 +499,9 @@
             Lowercase
           </label>
         </div>
+      </div>
+      <div class="layout-footer">
+        <button class="text-btn" id="layoutToggleBtn"></button>
       </div>
     </div>
 
@@ -1002,6 +1027,24 @@
 
     // Initialise group enabled/muted state to match default checked state
     syncAllGroups();
+
+    // --- Layout toggle ---
+    const container        = document.querySelector('.container');
+    const layoutToggleBtn  = document.getElementById('layoutToggleBtn');
+
+    function applyLayout(stacked) {
+      container.classList.toggle('layout-stacked', stacked);
+      layoutToggleBtn.textContent = stacked ? '⇔ Side-by-side layout' : '⇅ Stacked layout';
+    }
+
+    const savedLayout = localStorage.getItem('layout');
+    applyLayout(savedLayout === 'stacked');
+
+    layoutToggleBtn.addEventListener('click', () => {
+      const stacked = !container.classList.contains('layout-stacked');
+      applyLayout(stacked);
+      localStorage.setItem('layout', stacked ? 'stacked' : 'side-by-side');
+    });
   </script>
 </body>
 </html>
