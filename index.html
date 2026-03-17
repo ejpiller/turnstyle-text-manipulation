@@ -114,8 +114,6 @@
       .options {
         order: 2;
       }
-
-      .info { display: none; }
     }
 
     .layout-footer {
@@ -310,6 +308,10 @@
     }
 
     .info:hover::after { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .info { display: none; }
+    }
 
     .text-area-wrapper {
       position: relative;
@@ -1131,12 +1133,16 @@
       localStorage.setItem('layout', stacked ? 'stacked' : 'side-by-side');
     });
 
-    // --- Compact action buttons when they overflow ---
+    // --- Compact action buttons when they wrap to multiple lines ---
     const actionsEl = document.querySelector('.actions');
     function checkActionsOverflow() {
-      // First, try with labels (non-compact)
+      // Try with labels first
       actionsEl.classList.remove('compact');
-      if (actionsEl.scrollHeight > actionsEl.clientHeight) {
+      const children = actionsEl.children;
+      if (children.length < 2) return;
+      const firstTop = children[0].getBoundingClientRect().top;
+      const lastTop = children[children.length - 1].getBoundingClientRect().top;
+      if (lastTop > firstTop) {
         actionsEl.classList.add('compact');
       }
     }
