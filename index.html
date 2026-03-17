@@ -66,6 +66,12 @@
       order: 2;
     }
 
+    .container.layout-stacked .cap-choices {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.3rem 1rem;
+    }
+
     @media (max-width: 640px) {
       .container {
         grid-template-columns: 1fr;
@@ -498,11 +504,11 @@
         </label>
         <div class="cap-choices muted" id="capChoices">
           <label>
-            <input type="radio" name="capStyle" id="rdoTitleCase" value="title" checked>
+            <input type="radio" name="capStyle" id="rdoTitleCase" value="title">
             Title case
           </label>
           <label>
-            <input type="radio" name="capStyle" id="rdoSentenceCase" value="sentence">
+            <input type="radio" name="capStyle" id="rdoSentenceCase" value="sentence" checked>
             Sentence case
           </label>
           <label>
