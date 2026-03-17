@@ -616,7 +616,9 @@
     }
 
     function removeLineBreaks(text) {
-      // Replace newlines (and carriage returns) with a single space, then collapse
+      // If a line break immediately precedes punctuation, drop it without inserting a space
+      text = text.replace(/[\r\n]+([?!.,;:])/g, '$1');
+      // Replace remaining line breaks with a single space, then collapse
       text = text.replace(/[\r\n]+/g, ' ');
       text = text.replace(/ {2,}/g, ' ');
       return text.trim();
@@ -946,11 +948,13 @@
     selectAllBtn.addEventListener('click', () => {
       allCheckboxes.forEach(c => c.checked = true);
       syncAllGroups();
+      saveCheckboxes();
     });
 
     clearAllBtn.addEventListener('click', () => {
       allCheckboxes.forEach(c => c.checked = false);
       syncAllGroups();
+      saveCheckboxes();
     });
 
     applyBtn.addEventListener('click', () => {
@@ -1046,6 +1050,23 @@
       inputText.focus();
     });
 
+    // --- Checkbox persistence ---
+    function saveCheckboxes() {
+      const state = {};
+      allCheckboxes.forEach(c => { state[c.id] = c.checked; });
+      localStorage.setItem('checkboxes', JSON.stringify(state));
+    }
+
+    function restoreCheckboxes() {
+      const saved = localStorage.getItem('checkboxes');
+      if (!saved) return;
+      const state = JSON.parse(saved);
+      allCheckboxes.forEach(c => { if (c.id in state) c.checked = state[c.id]; });
+    }
+
+    allCheckboxes.forEach(c => c.addEventListener('change', saveCheckboxes));
+
+    restoreCheckboxes();
     // Initialise group enabled/muted state to match default checked state
     syncAllGroups();
 
