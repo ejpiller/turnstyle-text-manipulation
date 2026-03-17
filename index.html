@@ -93,6 +93,8 @@
       gap: 0.3rem 1rem;
     }
 
+    .actions .btn-icon { display: none; }
+
     @media (max-width: 640px) {
       .container {
         grid-template-columns: 1fr;
@@ -109,6 +111,12 @@
       .options {
         order: 2;
       }
+
+      .actions .btn-label { display: none; }
+      .actions .btn-icon { display: inline; }
+      .actions button { padding: 0.55rem 0.75rem; }
+
+      .info::after { display: none; }
     }
 
     .layout-footer {
@@ -395,6 +403,39 @@
       font-size: 0.8rem;
       color: #aaa;
     }
+
+    .tip-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .tip-overlay[hidden] { display: none; }
+    .tip-dialog {
+      background: #fff;
+      color: #222;
+      border-radius: 12px;
+      padding: 1.25rem;
+      max-width: 300px;
+      width: 90%;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    }
+    .tip-close {
+      margin-top: 1rem;
+      padding: 0.4rem 1.2rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .tip-close:hover { background: #1d4ed8; }
   </style>
 </head>
 <body>
@@ -561,11 +602,11 @@
         <span id="charCount">0 characters</span>
       </div>
       <div class="actions">
-        <button id="applyBtn">Apply</button>
+        <button id="applyBtn"><span class="btn-icon" aria-hidden="true">&#x2713;</span><span class="btn-label">Apply</span></button>
         <button id="backBtn" disabled title="Step back">&#8592;</button>
         <button id="fwdBtn" disabled title="Step forward">&#8594;</button>
-        <button id="copyBtn">Copy</button>
-        <button id="clearBtn">Clear</button>
+        <button id="copyBtn"><span class="btn-icon" aria-hidden="true">&#x29c9;</span><span class="btn-label">Copy</span></button>
+        <button id="clearBtn"><span class="btn-icon" aria-hidden="true">&#x2715;</span><span class="btn-label">Clear</span></button>
       </div>
     </div>
   </div>
@@ -1016,10 +1057,10 @@
       if (chkCapitalization.checked && rdoLowercase.checked)     text = toLowercase(text);
 
       if (text === before) {
-        applyBtn.textContent = 'No changes';
+        applyBtn.querySelector('.btn-label').textContent = 'No changes';
         applyBtn.classList.add('no-change');
         setTimeout(() => {
-          applyBtn.textContent = 'Apply';
+          applyBtn.querySelector('.btn-label').textContent = 'Apply';
           applyBtn.classList.remove('no-change');
         }, 1500);
         return;
@@ -1064,10 +1105,10 @@
       if (!inputText.value) return;
       try {
         await navigator.clipboard.writeText(inputText.value);
-        copyBtn.textContent = 'Copied!';
+        copyBtn.querySelector('.btn-label').textContent = 'Copied!';
         copyBtn.classList.add('copied');
         setTimeout(() => {
-          copyBtn.textContent = 'Copy';
+          copyBtn.querySelector('.btn-label').textContent = 'Copy';
           copyBtn.classList.remove('copied');
         }, 1500);
       } catch {
@@ -1111,7 +1152,7 @@
 
     function applyLayout(stacked) {
       container.classList.toggle('layout-stacked', stacked);
-      layoutToggleBtn.textContent = stacked ? '⇔ Side-by-side layout' : '⇅ Stacked layout';
+      layoutToggleBtn.textContent = 'Toggle layout';
     }
 
     const savedLayout = localStorage.getItem('layout');
@@ -1122,6 +1163,24 @@
       applyLayout(stacked);
       localStorage.setItem('layout', stacked ? 'stacked' : 'side-by-side');
     });
+
+    // --- Mobile tooltip dialogs ---
+    const tipOverlay = document.getElementById('tipOverlay');
+    const tipText = document.getElementById('tipOverlayText');
+    document.querySelectorAll('.info').forEach(el => {
+      el.addEventListener('click', () => {
+        tipText.textContent = el.getAttribute('data-tip');
+        tipOverlay.hidden = false;
+      });
+    });
+    tipOverlay.addEventListener('click', () => { tipOverlay.hidden = true; });
   </script>
+
+  <div id="tipOverlay" class="tip-overlay" hidden>
+    <div class="tip-dialog">
+      <p id="tipOverlayText"></p>
+      <button class="tip-close">OK</button>
+    </div>
+  </div>
 </body>
 </html>
