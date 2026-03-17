@@ -400,11 +400,46 @@
         </label>
       </div>
       <div class="option-group">
-        <h2>Language</h2>
+        <h2>Punctuation</h2>
+        <div class="dash-row">
+          <label>
+            <input type="checkbox" id="chkQuoteStyle">
+            Quotation marks
+          </label>
+          <span class="dash-choices muted" id="quoteStyleChoices">
+            <label>
+              <input type="radio" name="quoteStyle" id="rdoDouble" value="double" checked>
+              Double
+            </label>
+            <label>
+              <input type="radio" name="quoteStyle" id="rdoSingle" value="single">
+              Single
+            </label>
+          </span>
+        </div>
+        <div class="dash-row">
+          <label>
+            <input type="checkbox" id="chkPunctPlacement">
+            Periods and commas
+          </label>
+          <span class="dash-choices muted" id="punctPlacementChoices">
+            <label>
+              <input type="radio" name="punctPlacement" id="rdoInside" value="inside" checked>
+              Inside quotes
+            </label>
+            <label>
+              <input type="radio" name="punctPlacement" id="rdoOutside" value="outside">
+              Outside quotes
+            </label>
+          </span>
+        </div>
+      </div>
+      <div class="option-group">
+        <h2>Vocabulary</h2>
         <label>
           <input type="checkbox" id="chkEnglish">
           English variant
-          <i class="info" data-tip="Converts spelling (e.g., color/colour, organize/organise), swaps primary quotation mark style (double ↔ single), and moves periods and commas inside or outside closing quotation marks. Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms. Use with caution.">i</i>
+          <i class="info" data-tip="Converts spelling only (e.g., color/colour, organize/organise). Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms. Use with caution.">i</i>
         </label>
         <div class="cap-choices muted" id="englishChoices">
           <label>
@@ -742,17 +777,11 @@
     }
 
     function convertToUS(text) {
-      text = convertSpelling(text, UK_TO_US);
-      text = singleToDoubleQuotes(text);      // UK single→US double primary
-      text = punctuationInsideQuotes(text);
-      return text;
+      return convertSpelling(text, UK_TO_US);
     }
 
     function convertToUK(text) {
-      text = convertSpelling(text, US_TO_UK);
-      text = doubleToSingleQuotes(text);      // US double→UK single primary
-      text = punctuationOutsideQuotes(text);
-      return text;
+      return convertSpelling(text, US_TO_UK);
     }
 
     function toAllCaps(text) {
@@ -799,8 +828,16 @@
     const rdoTypographic    = document.getElementById('rdoTypographic');
     const rdoStraight       = document.getElementById('rdoStraight');
     const quotesChoices     = document.getElementById('quotesChoices');
-    const chkEllipsis       = document.getElementById('chkEllipsis');
-    const chkEnglish        = document.getElementById('chkEnglish');
+    const chkEllipsis           = document.getElementById('chkEllipsis');
+    const chkQuoteStyle         = document.getElementById('chkQuoteStyle');
+    const rdoDouble             = document.getElementById('rdoDouble');
+    const rdoSingle             = document.getElementById('rdoSingle');
+    const quoteStyleChoices     = document.getElementById('quoteStyleChoices');
+    const chkPunctPlacement     = document.getElementById('chkPunctPlacement');
+    const rdoInside             = document.getElementById('rdoInside');
+    const rdoOutside            = document.getElementById('rdoOutside');
+    const punctPlacementChoices = document.getElementById('punctPlacementChoices');
+    const chkEnglish            = document.getElementById('chkEnglish');
     const rdoUS             = document.getElementById('rdoUS');
     const rdoUK             = document.getElementById('rdoUK');
     const englishChoices    = document.getElementById('englishChoices');
@@ -824,7 +861,7 @@
 
     inputText.addEventListener('input', updateStats);
 
-    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkEnglish, chkCapitalization];
+    const allCheckboxes = [chkLineBreaks, chkWhitespace, chkDash, chkEllipsis, chkQuotes, chkQuoteStyle, chkPunctPlacement, chkEnglish, chkCapitalization];
 
     function setGroupEnabled(checkbox, choicesEl, radios) {
       const on = checkbox.checked;
@@ -838,6 +875,12 @@
     chkQuotes.addEventListener('change', () =>
       setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]));
 
+    chkQuoteStyle.addEventListener('change', () =>
+      setGroupEnabled(chkQuoteStyle, quoteStyleChoices, [rdoDouble, rdoSingle]));
+
+    chkPunctPlacement.addEventListener('change', () =>
+      setGroupEnabled(chkPunctPlacement, punctPlacementChoices, [rdoInside, rdoOutside]));
+
     chkEnglish.addEventListener('change', () =>
       setGroupEnabled(chkEnglish, englishChoices, [rdoUS, rdoUK]));
 
@@ -847,6 +890,8 @@
     function syncAllGroups() {
       setGroupEnabled(chkDash, dashChoices, [rdoEmDash, rdoEnDash]);
       setGroupEnabled(chkQuotes, quotesChoices, [rdoTypographic, rdoStraight]);
+      setGroupEnabled(chkQuoteStyle, quoteStyleChoices, [rdoDouble, rdoSingle]);
+      setGroupEnabled(chkPunctPlacement, punctPlacementChoices, [rdoInside, rdoOutside]);
       setGroupEnabled(chkEnglish, englishChoices, [rdoUS, rdoUK]);
       setGroupEnabled(chkCapitalization, capChoices, [rdoTitleCase, rdoSentenceCase, rdoAllCaps, rdoLowercase]);
     }
@@ -865,20 +910,24 @@
       const before = inputText.value;
       let text = before;
 
-      // Order: whitespace → dashes → ellipsis → english → capitalization → quotes
-      if (chkLineBreaks.checked)                               text = removeLineBreaks(text);
-      if (chkWhitespace.checked)                               text = collapseWhitespace(text);
-      if (chkDash.checked && rdoEmDash.checked)                text = replaceHyphenWithEmDash(text);
-      if (chkDash.checked && rdoEnDash.checked)                text = replaceHyphenWithEnDash(text);
-      if (chkEllipsis.checked)                                 text = convertEllipsis(text);
-      if (chkEnglish.checked && rdoUS.checked)                 text = convertToUS(text);
-      if (chkEnglish.checked && rdoUK.checked)                 text = convertToUK(text);
-      if (chkCapitalization.checked && rdoTitleCase.checked)   text = toTitleCase(text);
-      if (chkCapitalization.checked && rdoSentenceCase.checked) text = toSentenceCase(text);
-      if (chkCapitalization.checked && rdoAllCaps.checked)     text = toAllCaps(text);
-      if (chkCapitalization.checked && rdoLowercase.checked)   text = toLowercase(text);
-      if (chkQuotes.checked && rdoTypographic.checked)         text = smartQuotes(text);
-      if (chkQuotes.checked && rdoStraight.checked)            text = straightQuotes(text);
+      // Order: whitespace → dashes → ellipsis → quote style → quote level → punct placement → vocabulary → capitalization
+      if (chkLineBreaks.checked)                                 text = removeLineBreaks(text);
+      if (chkWhitespace.checked)                                 text = collapseWhitespace(text);
+      if (chkDash.checked && rdoEmDash.checked)                  text = replaceHyphenWithEmDash(text);
+      if (chkDash.checked && rdoEnDash.checked)                  text = replaceHyphenWithEnDash(text);
+      if (chkEllipsis.checked)                                   text = convertEllipsis(text);
+      if (chkQuotes.checked && rdoTypographic.checked)           text = smartQuotes(text);
+      if (chkQuotes.checked && rdoStraight.checked)              text = straightQuotes(text);
+      if (chkQuoteStyle.checked && rdoDouble.checked)            text = singleToDoubleQuotes(text);
+      if (chkQuoteStyle.checked && rdoSingle.checked)            text = doubleToSingleQuotes(text);
+      if (chkPunctPlacement.checked && rdoInside.checked)        text = punctuationInsideQuotes(text);
+      if (chkPunctPlacement.checked && rdoOutside.checked)       text = punctuationOutsideQuotes(text);
+      if (chkEnglish.checked && rdoUS.checked)                   text = convertToUS(text);
+      if (chkEnglish.checked && rdoUK.checked)                   text = convertToUK(text);
+      if (chkCapitalization.checked && rdoTitleCase.checked)     text = toTitleCase(text);
+      if (chkCapitalization.checked && rdoSentenceCase.checked)  text = toSentenceCase(text);
+      if (chkCapitalization.checked && rdoAllCaps.checked)       text = toAllCaps(text);
+      if (chkCapitalization.checked && rdoLowercase.checked)     text = toLowercase(text);
 
       if (text === before) {
         applyBtn.textContent = 'No changes';
