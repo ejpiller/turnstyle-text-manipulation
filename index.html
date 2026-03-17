@@ -197,12 +197,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 0.95em;
-      height: 0.95em;
+      width: 1rem;
+      height: 1rem;
       border-radius: 50%;
       border: 1.5px solid #aaa;
       color: #aaa;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-style: normal;
       font-weight: 600;
       cursor: help;
@@ -292,16 +292,22 @@
 
     #copyBtn:hover { background: #d1d5db; }
 
-    #resetBtn {
+    #backBtn, #fwdBtn {
       background: #e5e7eb;
       color: #222;
+      padding: 0.55rem 0.75rem;
     }
 
-    #resetBtn:hover { background: #d1d5db; }
+    #backBtn:hover, #fwdBtn:hover { background: #d1d5db; }
 
-    #resetBtn:disabled {
+    #backBtn:disabled, #fwdBtn:disabled {
       opacity: 0.35;
       cursor: default;
+    }
+
+    #applyBtn.no-change {
+      background: #fef3c7;
+      color: #92400e;
     }
 
     #clearBtn {
@@ -398,7 +404,7 @@
         <label>
           <input type="checkbox" id="chkEnglish">
           English variant
-          <i class="info" data-tip="Converts spelling (e.g., color/colour, organize/organise), swaps primary quotation mark style (double ↔ single), and moves periods and commas inside or outside closing quotation marks. Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms.">i</i>
+          <i class="info" data-tip="Converts spelling (e.g., color/colour, organize/organise), swaps primary quotation mark style (double ↔ single), and moves periods and commas inside or outside closing quotation marks. Does not change serial (Oxford) comma usage, vocabulary (e.g., elevator/lift), or idioms. Use with caution.">i</i>
         </label>
         <div class="cap-choices muted" id="englishChoices">
           <label>
@@ -448,7 +454,8 @@
       </div>
       <div class="actions">
         <button id="applyBtn">Apply</button>
-        <button id="resetBtn" disabled>Reset</button>
+        <button id="backBtn" disabled title="Step back">&#8592;</button>
+        <button id="fwdBtn" disabled title="Step forward">&#8594;</button>
         <button id="copyBtn">Copy</button>
         <button id="clearBtn">Clear</button>
       </div>
@@ -691,11 +698,22 @@
     }
 
     // Swap double ↔ single typographic quotes (for UK ↔ US primary/secondary quote style)
-    function swapQuoteLevels(text) {
-      // Temporarily replace singles with placeholders, then doubles→singles, then placeholders→doubles
-      text = text.replace(/\u2018/g, '\x01').replace(/\u2019/g, '\x02');
-      text = text.replace(/\u201C/g, '\u2018').replace(/\u201D/g, '\u2019');
-      text = text.replace(/\x01/g, '\u201C').replace(/\x02/g, '\u201D');
+    function doubleToSingleQuotes(text) {
+      text = text.replace(/\u201C/g, '\u2018');
+      text = text.replace(/\u201D/g, '\u2019');
+      return text;
+    }
+
+    function singleToDoubleQuotes(text) {
+      // \u2018 (left single) is always an opening quote, never an apostrophe — safe to convert
+      text = text.replace(/\u2018/g, '\u201C');
+      // \u2019 is used for both closing quotes and apostrophes.
+      // Heuristic: it's a closing quote when NOT preceded by a word character.
+      // This correctly handles: 'word' (closing after d→ preceded by d, hmm)
+      // Better: it's an apostrophe when surrounded by word chars on both sides (contractions)
+      // or follows a word char and precedes a word char (it's, don't)
+      // It's a closing quote when preceded by word char but followed by space/punct/end
+      text = text.replace(/\u2019(?!\w)/g, '\u201D');
       return text;
     }
 
@@ -725,14 +743,14 @@
 
     function convertToUS(text) {
       text = convertSpelling(text, UK_TO_US);
-      text = swapQuoteLevels(text);           // UK single→US double primary
+      text = singleToDoubleQuotes(text);      // UK single→US double primary
       text = punctuationInsideQuotes(text);
       return text;
     }
 
     function convertToUK(text) {
       text = convertSpelling(text, US_TO_UK);
-      text = swapQuoteLevels(text);           // US double→UK single primary
+      text = doubleToSingleQuotes(text);      // US double→UK single primary
       text = punctuationOutsideQuotes(text);
       return text;
     }
@@ -756,13 +774,20 @@
 
     const inputText    = document.getElementById('inputText');
     const applyBtn     = document.getElementById('applyBtn');
-    const resetBtn     = document.getElementById('resetBtn');
+    const backBtn      = document.getElementById('backBtn');
+    const fwdBtn       = document.getElementById('fwdBtn');
     const copyBtn      = document.getElementById('copyBtn');
     const clearBtn     = document.getElementById('clearBtn');
     const selectAllBtn = document.getElementById('selectAllBtn');
     const clearAllBtn  = document.getElementById('clearAllBtn');
 
-    let originalText = null;
+    let history      = [];
+    let historyIndex = -1;
+
+    function updateNavButtons() {
+      backBtn.disabled = historyIndex <= 0;
+      fwdBtn.disabled  = historyIndex >= history.length - 1;
+    }
 
     const chkWhitespace     = document.getElementById('chkWhitespace');
     const chkLineBreaks     = document.getElementById('chkLineBreaks');
@@ -837,35 +862,65 @@
     });
 
     applyBtn.addEventListener('click', () => {
-      originalText = inputText.value;
-      resetBtn.disabled = false;
+      const before = inputText.value;
+      let text = before;
 
-      let text = originalText;
-
-      // Order: whitespace → dashes → capitalization → quotes
-      if (chkLineBreaks.checked)                          text = removeLineBreaks(text);
-      if (chkWhitespace.checked)                          text = collapseWhitespace(text);
-      if (chkDash.checked && rdoEmDash.checked)           text = replaceHyphenWithEmDash(text);
-      if (chkDash.checked && rdoEnDash.checked)           text = replaceHyphenWithEnDash(text);
-      if (chkEllipsis.checked)                            text = convertEllipsis(text);
-      if (chkEnglish.checked && rdoUS.checked)             text = convertToUS(text);
-      if (chkEnglish.checked && rdoUK.checked)             text = convertToUK(text);
-      if (chkCapitalization.checked && rdoTitleCase.checked)    text = toTitleCase(text);
+      // Order: whitespace → dashes → ellipsis → english → capitalization → quotes
+      if (chkLineBreaks.checked)                               text = removeLineBreaks(text);
+      if (chkWhitespace.checked)                               text = collapseWhitespace(text);
+      if (chkDash.checked && rdoEmDash.checked)                text = replaceHyphenWithEmDash(text);
+      if (chkDash.checked && rdoEnDash.checked)                text = replaceHyphenWithEnDash(text);
+      if (chkEllipsis.checked)                                 text = convertEllipsis(text);
+      if (chkEnglish.checked && rdoUS.checked)                 text = convertToUS(text);
+      if (chkEnglish.checked && rdoUK.checked)                 text = convertToUK(text);
+      if (chkCapitalization.checked && rdoTitleCase.checked)   text = toTitleCase(text);
       if (chkCapitalization.checked && rdoSentenceCase.checked) text = toSentenceCase(text);
-      if (chkCapitalization.checked && rdoAllCaps.checked)      text = toAllCaps(text);
-      if (chkCapitalization.checked && rdoLowercase.checked)    text = toLowercase(text);
-      if (chkQuotes.checked && rdoTypographic.checked)    text = smartQuotes(text);
-      if (chkQuotes.checked && rdoStraight.checked)       text = straightQuotes(text);
+      if (chkCapitalization.checked && rdoAllCaps.checked)     text = toAllCaps(text);
+      if (chkCapitalization.checked && rdoLowercase.checked)   text = toLowercase(text);
+      if (chkQuotes.checked && rdoTypographic.checked)         text = smartQuotes(text);
+      if (chkQuotes.checked && rdoStraight.checked)            text = straightQuotes(text);
+
+      if (text === before) {
+        applyBtn.textContent = 'No changes';
+        applyBtn.classList.add('no-change');
+        setTimeout(() => {
+          applyBtn.textContent = 'Apply';
+          applyBtn.classList.remove('no-change');
+        }, 1500);
+        return;
+      }
+
+      // If the textarea has drifted from the current history entry, record it first
+      if (historyIndex === -1 || history[historyIndex] !== before) {
+        history = history.slice(0, historyIndex + 1);
+        history.push(before);
+        historyIndex = history.length - 1;
+      }
+
+      // Truncate forward history and push new state
+      history = history.slice(0, historyIndex + 1);
+      history.push(text);
+      historyIndex = history.length - 1;
 
       inputText.value = text;
+      updateNavButtons();
       updateStats();
     });
 
-    resetBtn.addEventListener('click', () => {
-      if (originalText !== null) {
-        inputText.value = originalText;
-        originalText = null;
-        resetBtn.disabled = true;
+    backBtn.addEventListener('click', () => {
+      if (historyIndex > 0) {
+        historyIndex--;
+        inputText.value = history[historyIndex];
+        updateNavButtons();
+        updateStats();
+      }
+    });
+
+    fwdBtn.addEventListener('click', () => {
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        inputText.value = history[historyIndex];
+        updateNavButtons();
         updateStats();
       }
     });
@@ -888,8 +943,9 @@
 
     clearBtn.addEventListener('click', () => {
       inputText.value = '';
-      originalText = null;
-      resetBtn.disabled = true;
+      history      = [];
+      historyIndex = -1;
+      updateNavButtons();
       updateStats();
       inputText.focus();
     });
