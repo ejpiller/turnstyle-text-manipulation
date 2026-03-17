@@ -616,7 +616,11 @@
     }
 
     function removeLineBreaks(text) {
-      // If a line break immediately precedes punctuation, drop it without inserting a space
+      // Strip line break (and any surrounding spaces) immediately after an opening bracket or quote
+      text = text.replace(/([\u201C\u2018"'(\[{]) *[\r\n]+ */g, '$1');
+      // Strip line break (and any surrounding spaces) immediately before a closing bracket or quote
+      text = text.replace(/ *[\r\n]+ *([\u201D\u2019"')\]}])/g, '$1');
+      // Strip line break immediately before sentence punctuation
       text = text.replace(/[\r\n]+([?!.,;:])/g, '$1');
       // Replace remaining line breaks with a single space, then collapse
       text = text.replace(/[\r\n]+/g, ' ');
