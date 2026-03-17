@@ -94,6 +94,9 @@
     }
 
     .actions .btn-icon { display: none; }
+    .actions.compact .btn-label { display: none; }
+    .actions.compact .btn-icon { display: inline; }
+    .actions.compact button { padding: 0.55rem 0.75rem; }
 
     @media (max-width: 640px) {
       .container {
@@ -112,11 +115,7 @@
         order: 2;
       }
 
-      .actions .btn-label { display: none; }
-      .actions .btn-icon { display: inline; }
-      .actions button { padding: 0.55rem 0.75rem; }
-
-      .info::after { display: none; }
+      .info { display: none; }
     }
 
     .layout-footer {
@@ -404,38 +403,6 @@
       color: #aaa;
     }
 
-    .tip-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-    .tip-overlay[hidden] { display: none; }
-    .tip-dialog {
-      background: #fff;
-      color: #222;
-      border-radius: 12px;
-      padding: 1.25rem;
-      max-width: 300px;
-      width: 90%;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    }
-    .tip-close {
-      margin-top: 1rem;
-      padding: 0.4rem 1.2rem;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .tip-close:hover { background: #1d4ed8; }
   </style>
 </head>
 <body>
@@ -1164,23 +1131,22 @@
       localStorage.setItem('layout', stacked ? 'stacked' : 'side-by-side');
     });
 
-    // --- Mobile tooltip dialogs ---
-    const tipOverlay = document.getElementById('tipOverlay');
-    const tipText = document.getElementById('tipOverlayText');
-    document.querySelectorAll('.info').forEach(el => {
-      el.addEventListener('click', () => {
-        tipText.textContent = el.getAttribute('data-tip');
-        tipOverlay.hidden = false;
-      });
+    // --- Compact action buttons when they overflow ---
+    const actionsEl = document.querySelector('.actions');
+    function checkActionsOverflow() {
+      // First, try with labels (non-compact)
+      actionsEl.classList.remove('compact');
+      if (actionsEl.scrollHeight > actionsEl.clientHeight) {
+        actionsEl.classList.add('compact');
+      }
+    }
+    checkActionsOverflow();
+    window.addEventListener('resize', checkActionsOverflow);
+    // Re-check after layout toggle since panel widths change
+    layoutToggleBtn.addEventListener('click', () => {
+      requestAnimationFrame(checkActionsOverflow);
     });
-    tipOverlay.addEventListener('click', () => { tipOverlay.hidden = true; });
-  </script>
 
-  <div id="tipOverlay" class="tip-overlay" hidden>
-    <div class="tip-dialog">
-      <p id="tipOverlayText"></p>
-      <button class="tip-close">OK</button>
-    </div>
-  </div>
+  </script>
 </body>
 </html>
